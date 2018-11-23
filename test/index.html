@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+  <head>
+    <title>AON Games</title>
+  </head>
+  <link rel="stylesheet" type="text/css" href="/css/fullscreen.css" />
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+  <script src="/node_modules/nipplejs/dist/nipplejs.min.js"></script>
+  <body>
+    <div id="semi" style="height:100%;width:100%;background-color:red;">
+    </div>
+  </body>
+  <script>
+    var semi_joystick = nipplejs.create({
+      zone: document.getElementById('semi'),
+      mode: 'semi',
+      size: 300,
+      catchDistance: 350,
+      color: 'white'
+    });
+    var socket = io.connect('', { query:"roomKey=ABCD&name=andy"});
+    semi_joystick.on('move', function(evt, nipple) {
+      var rad = nipple.angle.radian;
+      var payload = {
+        cookie_id : document.cookie,
+        input : {
+          yValue : Math.sin(rad),
+          xValue : Math.cos(rad)
+        }
+      };
+      socket.emit('control', payload);
+    });
+    semi_joystick.on('end', function(evt, nipple) {
+      var payload = {
+        cookie_id : document.cookie,
+        input : {
+          yValue : 0,
+          xValue : 0
+        }
+      };
+      socket.emit('control', payload);
+    });
+  </script>

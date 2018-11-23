@@ -1,0 +1,22 @@
+html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  max-height: 100%;
+  float: left;
+  width: 100%;
+  overflow: hidden;
+}
+
+.nopadding {
+   padding: 0 !important;
+}
+
+
+
+

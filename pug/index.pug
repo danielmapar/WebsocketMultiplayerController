@@ -1,0 +1,124 @@
+extends layout/default_layout
+
+block css
+  link(rel='stylesheet' type='text/css' href='/css/overlay.css')
+
+block view
+  fieldset.container-fluid(style='display:none;')
+    .row.justify-content-md-center.ui-container
+      .col-12.col-md-6.col-lg-5.nopadding
+        button.btn.btn-danger(type="button") START
+  //-
+    fieldset.container-fluid(style='display:none;')
+      .row.justify-content-md-center.ui-container
+        .col-12.col-md-6.col-lg-5.nopadding
+          button.btn.readybtn.btn-danger(type="button") START
+      #semi(style='height:100%;width:100%;')
+  
+  fieldset.container-fluid
+    .row.justify-content-md-center.ui-container
+      .col-12.col-md-6.col-lg-5.nopadding
+        button.btn.readybtn.btn-danger(type="button") START
+    .row.fullheight
+      .col-6.nopadding
+        #semi(style='height:100%;width:100%;')
+      .col-6.nopadding
+        button.btn.controlbtn.jumpbtn.btn-secondary(type="button") Jump
+        #attack(style='height:100%;width:100%;')
+        //-
+          button.btn.controlbtn.attackbtn.btn-primary(type="button") Attack
+
+block script
+  script(src='/js/ui.js')
+  script(src='/scripts/jquery-color/jquery.color.js')
+  script(src='/socket.io/socket.io.js')
+  script(src='/scripts/nipplejs/dist/nipplejs.min.js')
+  script.
+    var session_id = "#{session.id}";
+    var input = { start_btn : 0,
+                  xValue : 0,
+                  yValue : 0
+                };
+    var attack_joystick = nipplejs.create({
+      zone: document.getElementById('attack'),
+      mode: 'dynamic',
+      color: 'white',
+      lockX: true,
+      lockY: true,
+      dataOnly: true,
+      position: {left: '50%', top: '50%'}
+    });
+    var semi_joystick = nipplejs.create({
+      zone: document.getElementById('semi'),
+      mode: 'static',
+      size: 250,
+      position: {left: '50%', top: '50%'},
+      color: 'white'
+    });
+    var socket = io.connect('', { query:"roomKey=ABCD&name=andy&session_id="+session_id});
+    socket.on('system', function(data){
+      console.log('system received:');
+      console.log(data);
+      switch(data.msg) {
+        case "show start_btn":
+          $('.readybtn').parent().addClass('active');
+          break;
+        case "hide start_btn":
+          $('.readybtn').removeClass('active');
+          $('.readybtn').parent().removeClass('active');
+          break;
+      }
+    });
+    $('button').click(function(e) {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      if($(this).hasClass("readybtn")) {
+        $(this).addClass('active');
+        input.start_btn=1;
+      } else if($(this).hasClass("attackbtn")) {
+        input.Attack=1;
+        console.log("attack");
+      } else if($(this).hasClass("jumpbtn")) {
+        input.Jump=1;
+        console.log("jump");
+      }
+      var payload = {
+        session_id : session_id,
+        input : input
+      };
+      socket.emit('control', payload);
+      input.Attack=0;
+      input.Jump=0;
+    });
+    attack_joystick.on('start', function(evt, nipple) {
+      var payload = {
+        session_id : session_id,
+        input : input
+      };
+      input.Attack=1;
+      socket.emit('control', payload);
+      input.Attack=0;
+      console.log("clicked");
+      $('#attack').stop().css("background-color", "#FFFF9C")
+        .animate({ backgroundColor: "rgba(0,0,0,0)"}, 500);
+    });
+    semi_joystick.on('move', function(evt, nipple) {
+      var rad = nipple.angle.radian;
+      input.yValue=Math.sin(rad);
+      input.xValue=Math.cos(rad);
+      var payload = {
+        session_id : session_id,
+        input : input
+      };
+      socket.emit('control', payload);
+    });
+    semi_joystick.on('end', function(evt, nipple) {
+      input.xValue = 0;
+      input.yValue = 0;
+      var payload = {
+        session_id : session_id,
+        input : input
+      };
+      socket.emit('control', payload);
+    });
+   
